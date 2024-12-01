@@ -4,6 +4,11 @@ const nextConfig = {
   images: {
     domains: ["res.cloudinary.com"],
   },
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+    },
+  },
 };
 
 export default nextConfig;
