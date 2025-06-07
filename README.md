@@ -63,3 +63,8 @@ To reset the complete database and seed again
 2. npx prisma generate
 3. npx prisma db push
 4. npx prisma db seed
+
+After updating the schema
+
+1. npx prisma generate
+2. npx prisma migrate dev -n AddedIsApproved
