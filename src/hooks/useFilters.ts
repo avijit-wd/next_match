@@ -1,29 +1,49 @@
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { FaMale, FaFemale } from "react-icons/fa";
 import userFilterStore from "./useFilterStore";
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
 import { Selection } from "@nextui-org/react";
+import usePaginationStore from "./usePaginationStore";
 
 export const useFilters = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const { filters, setFilters } = userFilterStore();
 
-  const { gender, ageRange, orderBy } = filters;
+  const { pagination, setPage } = usePaginationStore();
+
+  const { gender, ageRange, orderBy, withPhoto } = filters;
 
   useEffect(() => {
-    const searchParams = new URLSearchParams();
+    if (gender || ageRange || orderBy || withPhoto) {
+      setPage(1);
+    }
+  }, [gender, ageRange, orderBy, withPhoto]);
 
-    if (gender) searchParams.set("gender", gender.join(","));
+  useEffect(() => {
+    startTransition(() => {
+      const searchParams = new URLSearchParams();
 
-    if (ageRange) searchParams.set("ageRange", ageRange.toString());
+      if (gender) searchParams.set("gender", gender.join(","));
 
-    if (orderBy) searchParams.set("orderBy", orderBy);
+      if (ageRange) searchParams.set("ageRange", ageRange.toString());
 
-    router.replace(`${pathname}?${searchParams}`);
-  }, [gender, ageRange, orderBy, router, pathname]);
+      if (orderBy) searchParams.set("orderBy", orderBy);
+
+      if (pagination.pageSize)
+        searchParams.set("pageSize", pagination.pageSize.toString());
+
+      if (pagination.pageNumber)
+        searchParams.set("pageNumber", pagination.pageNumber.toString());
+
+      searchParams.set("withPhoto", String(withPhoto ?? false));
+
+      router.replace(`${pathname}?${searchParams}`);
+    });
+  }, [gender, ageRange, orderBy, pagination, router, withPhoto, pathname]);
 
   const orderByList = [
     {
@@ -63,12 +83,19 @@ export const useFilters = () => {
     else setFilters("gender", [...gender, value]);
   };
 
+  const handleWithPhoto = (value: boolean) => {
+    setFilters("withPhoto", value);
+  };
+
   return {
     orderByList,
     genders,
     selectAge: handleAgeSelect,
     selectGender: handleGenderSelect,
     selectOrder: handleOrderSelect,
+    selectWithPhoto: handleWithPhoto,
     filters,
+    isPending,
+    totalCount: pagination.totalCount,
   };
 };

@@ -1,13 +1,16 @@
 "use client";
 import { useFilters } from "@/hooks/useFilters";
-import { Button, Select, SelectItem, Slider } from "@nextui-org/react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import React from "react";
-import { FaFemale, FaMale } from "react-icons/fa";
+import {
+  Button,
+  Select,
+  SelectItem,
+  Slider,
+  Spinner,
+  Switch,
+} from "@nextui-org/react";
+import React, { ChangeEvent } from "react";
 
 export default function Filters() {
-  const pathname = usePathname();
-
   const {
     filters,
     genders,
@@ -15,13 +18,20 @@ export default function Filters() {
     selectAge,
     selectOrder,
     selectGender,
+    selectWithPhoto,
+    isPending,
+    totalCount,
   } = useFilters();
 
-  if (pathname !== "/members") return null;
   return (
     <div className="shadow-md py-2">
       <div className="flex flex-row justify-around items-center">
-        <div className="text-secondary font-semibold text-xl">Result:10</div>
+        <div className="flex gap-2 items-center">
+          <div className="text-secondary font-semibold text-xl">
+            Result:{" "}
+            {isPending ? <Spinner size="sm" color="secondary" /> : totalCount}
+          </div>
+        </div>
         <div className="flex gap-2 items-center">
           <div>Gender:</div>
           {genders.map(({ icon: Icon, value }) => (
@@ -40,6 +50,7 @@ export default function Filters() {
           <Slider
             label="Age Range"
             color="secondary"
+            aria-label="age-range-slider"
             size="sm"
             minValue={18}
             maxValue={100}
@@ -48,6 +59,18 @@ export default function Filters() {
             onChangeEnd={(value) => selectAge(value as number[])}
           />
         </div>
+
+        <div>
+          <p className="text-sm">With Photo</p>
+          <Switch
+            isSelected={filters.withPhoto}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              selectWithPhoto(e.target.checked)
+            }
+            aria-label="Automatic updates"
+          />
+        </div>
+
         <div className="w-1/4">
           <Select
             aria-label="order by selector"

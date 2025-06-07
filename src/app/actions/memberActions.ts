@@ -2,43 +2,71 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { UserFilters } from "@/types";
-import { Photo } from "@prisma/client";
+import { GetMemberParams, PaginatedResponse, UserFilters } from "@/types";
+import { Member, Photo } from "@prisma/client";
 import { addYears } from "date-fns";
 import { getAuthUserId } from "./authActions";
 
-export async function getMembers(searchParams: UserFilters) {
-  const session = await auth();
+export async function getMembers({
+  ageRange = "18,100",
+  gender = "male, female",
+  orderBy = "updated",
+  pageNumber = "1",
+  pageSize = "12",
+  withPhoto = "true",
+}: GetMemberParams): Promise<PaginatedResponse<Member>> {
+  const userId = await getAuthUserId();
 
-  if (!session?.user) return null;
+  const [minRange, maxRange] = ageRange.split(",");
 
-  const ageRange = searchParams?.ageRange?.toString()?.split(",") || [18, 100];
   const currentDate = new Date();
 
-  const minDob = addYears(currentDate, -ageRange[1] - 1);
-  const maxDob = addYears(currentDate, -ageRange[0]);
+  const minDob = addYears(currentDate, -maxRange - 1);
+  const maxDob = addYears(currentDate, -minRange);
 
-  const orderBySelector = searchParams?.orderBy || "updated";
+  const selectedGender = gender.split(",");
 
-  const selectedGender = searchParams?.gender?.toString().split(",") || [
-    "male",
-    "female",
-  ];
+  const page = parseInt(pageNumber);
+  const limit = parseInt(pageSize);
+
+  const skip = (page - 1) * limit;
 
   try {
-    return prisma.member.findMany({
+    const count = await prisma.member.count({
       where: {
         AND: [
           { dateOfBirth: { gte: minDob } },
           { dateOfBirth: { lte: maxDob } },
           { gender: { in: selectedGender } },
+          ...(withPhoto === "true" ? [{ image: { not: null } }] : []),
         ],
         NOT: {
-          userId: session.user.id,
+          userId,
         },
       },
-      orderBy: { [orderBySelector]: "desc" },
     });
+
+    const members = await prisma.member.findMany({
+      where: {
+        AND: [
+          { dateOfBirth: { gte: minDob } },
+          { dateOfBirth: { lte: maxDob } },
+          { gender: { in: selectedGender } },
+          ...(withPhoto === "true" ? [{ image: { not: null } }] : []),
+        ],
+        NOT: {
+          userId,
+        },
+      },
+      orderBy: { [orderBy]: "desc" },
+      skip,
+      take: limit,
+    });
+
+    return {
+      items: members,
+      totalCount: count,
+    };
   } catch (error) {
     console.log(error);
   }

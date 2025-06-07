@@ -56,3 +56,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 # Server Actions
 
 # Postgress+NeonDB
+
+To reset the complete database and seed again
+
+1. npx prisma migrate reset --skip-seed
+2. npx prisma generate
+3. npx prisma db push
+4. npx prisma db seed

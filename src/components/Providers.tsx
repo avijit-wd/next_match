@@ -12,14 +12,16 @@ import "react-toastify/dist/ReactToastify.css";
 export default function Providers({
   children,
   userId,
+  profileComplete,
 }: {
   children: ReactNode;
   userId: string | null;
+  profileComplete: boolean;
 }) {
   const isUnreadCountRef = useRef<boolean | null>(false);
   const { updateUnreadCount } = useMessageStore();
-  usePresenceChannel();
-  useNotificationChannel(userId);
+  usePresenceChannel(userId, profileComplete);
+  useNotificationChannel(userId, profileComplete);
 
   const setUnreadCount = useCallback(
     (amount: number) => {
