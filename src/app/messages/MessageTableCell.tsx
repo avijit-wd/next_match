@@ -1,7 +1,8 @@
+import AppModal from "@/components/AppModal";
 import PresenceAvatar from "@/components/PresenceAvatar";
 import { truncateString } from "@/lib/utils";
 import { MessageDto } from "@/types";
-import { Button } from "@nextui-org/react";
+import { Button, ButtonProps, useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { AiFillDelete } from "react-icons/ai";
 
@@ -21,6 +22,20 @@ export default function MessageTableCell({
   isDeleting,
 }: Props) {
   const cellValue = item[columnKey as keyof MessageDto];
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const onConfirmDeleteMessage = () => {
+    deleteMessage(item);
+  };
+
+  const footerButtons: ButtonProps[] = [
+    { color: "default", onClick: onClose, children: "Cancel" },
+    {
+      color: "secondary",
+      onClick: onConfirmDeleteMessage,
+      children: "Confirm",
+    },
+  ];
 
   switch (columnKey) {
     case "recipientName":
@@ -39,17 +54,31 @@ export default function MessageTableCell({
       return <div>{truncateString(cellValue, 80)}</div>;
 
     case "created":
-      return cellValue;
+      return <>{cellValue}</>;
     default:
       return (
-        <Button
-          variant="light"
-          isIconOnly
-          onClick={() => deleteMessage(item)}
-          isLoading={isDeleting}
-        >
-          <AiFillDelete size={24} className="text-danger" />
-        </Button>
+        <>
+          <Button
+            variant="light"
+            isIconOnly
+            onClick={() => onOpen()}
+            isLoading={isDeleting}
+          >
+            <AiFillDelete size={24} className="text-danger" />
+          </Button>
+          <AppModal
+            isOpen={isOpen}
+            onClose={onClose}
+            header="Please confirm this action"
+            body={
+              <div>
+                Are you sure you want to delete this message? This cannot be
+                undone.
+              </div>
+            }
+            footerButtons={footerButtons}
+          />
+        </>
       );
   }
 }

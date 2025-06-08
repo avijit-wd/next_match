@@ -69,6 +69,7 @@ export async function getMembers({
     };
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 
