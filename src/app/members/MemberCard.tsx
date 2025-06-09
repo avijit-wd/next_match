@@ -5,7 +5,8 @@ import { calculateAge, transformImageUrl } from "@/lib/utils";
 import { Card, CardFooter, Image } from "@nextui-org/react";
 import { Member } from "@prisma/client";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
+import { toggleLikeMember } from "../actions/likeActions";
 
 type Props = {
   member: Member;
@@ -13,12 +14,25 @@ type Props = {
 };
 
 export default function MemberCard({ member, likedIds }: Props) {
-  const hasLiked = likedIds.includes(member.userId);
+  const [hasLiked, setHasLiked] = useState(likedIds.includes(member.userId));
+  const [loading, setLoading] = useState(false);
 
   const preventLinkAction = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   };
+
+  async function toggleLike() {
+    setLoading(true);
+    try {
+      await toggleLikeMember(member.userId, hasLiked);
+      setHasLiked(!hasLiked);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <Card as={Link} href={`/members/${member.userId}`} isPressable fullWidth>
       <Image
@@ -30,7 +44,11 @@ export default function MemberCard({ member, likedIds }: Props) {
       />
       <div onClick={preventLinkAction}>
         <div className="absolute top-3 right-3 z-50">
-          <LikeButton targetId={member.userId} hasLiked={hasLiked} />
+          <LikeButton
+            loading={loading}
+            toggleLike={toggleLike}
+            hasLiked={hasLiked}
+          />
         </div>
         <div className="absolute top-2 left-3 z-50">
           <PresenceDot member={member} />
